@@ -1,0 +1,59 @@
+name: my-custom-docker-provider
+version: v1.0.0
+description: "A custom provider for managing Docker containers"
+icon: https://url-to-icon.com/icon.png
+options:
+  DOCKER_HOST:
+    description: "The Docker host to connect to"
+    default: "unix:///var/run/docker.sock"
+    required: true
+  AGENT_PATH:
+    description: "The path where to inject the DevPod agent"
+    default: "/opt/devpod/agent"
+    required: true
+agent:
+  path: ${AGENT_PATH}
+exec:
+  init: |-
+    docker info > /dev/null 2>&1
+    if [ $? -ne 0 ]; then
+      echo "Docker is not running or not reachable."
+      exit 1
+    fi
+  command: |-
+    docker exec -it ${CONTAINER_ID} sh -c "${COMMAND}"
+  create: |-
+    docker run -d --name ${CONTAINER_NAME} ${IMAGE}
+  delete: |-
+    docker rm -f ${CONTAINER_ID}
+  start: |-
+    docker start ${CONTAINER_ID}
+  stop: |-
+    docker stop ${CONTAINER_ID}
+  status: |-
+    STATUS=$(docker inspect -f '{{.State.Status}}' ${CONTAINER_ID})
+    if [ "$STATUS" == "running" ]; then
+      echo "Running"
+    elif [ "$STATUS" == "exited" ]; then
+      echo "Stopped"
+    else
+      echo "NotFound"
+    fi
+binaries:
+  DOCKER:
+    - os: linux
+      arch: amd64
+      path: https://download.docker.com/linux/static/stable/x86_64/docker-20.10.7.tgz
+      checksum: abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890
+    - os: linux
+      arch: arm64
+      path: https://download.docker.com/linux/static/stable/aarch64/docker-20.10.7.tgz
+      checksum: abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890
+    - os: darwin
+      arch: amd64
+      path: https://download.docker.com/mac/static/stable/x86_64/docker-20.10.7.tgz
+      checksum: abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890
+    - os: windows
+      arch: amd64
+      path: https://download.docker.com/win/static/stable/x86_64/docker-20.10.7.tgz
+      checksum: abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890
